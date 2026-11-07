@@ -1,0 +1,162 @@
+import React, { useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Check, ShieldCheck } from 'lucide-react'
+import toast from 'react-hot-toast'
+import axios from 'axios'
+
+const VerifyOtp = () => {
+    const [otp, setOtp] = useState('')
+    const [loading, setLoading] = useState(false)
+
+    const location = useLocation()
+    const navigate = useNavigate()
+
+    const email = location.state?.email
+
+    const handleChange = (e) => {
+        const value = e.target.value
+
+        if (/^\d{0,6}$/.test(value)) {
+            setOtp(value)
+        }
+    }
+
+    const handleSubmit = (e) => {
+        e.preventDefault()
+
+        if (!email) {
+            toast.error('Email not found. Please register again.')
+            navigate('/auth/register')
+            return
+        }
+
+        if (otp.length !== 6) {
+            toast.error('Please enter the 6-digit OTP')
+            return
+        }
+
+        setLoading(true)
+
+        axios
+            .post(`${window.apiURL}/auth/verify-otp`, {
+                email,
+                otp,
+            })
+            .then(({ data }) => {
+                toast.success(
+                    data?.message || 'Account created successfully'
+                )
+
+                navigate('/auth/login')
+            })
+            .catch((error) => {
+                console.error(error.response?.data?.message)
+
+                toast.error(
+                    error?.response?.data?.message ||
+                    'Invalid or expired OTP'
+                )
+            })
+            .finally(() => {
+                setLoading(false)
+            })
+    }
+
+    return (
+        <div className="min-h-[calc(100vh-80px)] bg-white flex items-center justify-center px-6 py-10">
+
+            <div className="w-full max-w-md">
+
+                {/* Logo */}
+                <div className="w-14 h-14 rounded-[18px] bg-[#111827] flex items-center justify-center mx-auto mb-6">
+                    <Check
+                        size={28}
+                        strokeWidth={3}
+                        className="text-white"
+                    />
+                </div>
+
+                {/* Heading */}
+                <h1 className="text-3xl font-extrabold text-[#111827] text-center">
+                    Verify Your Email
+                </h1>
+
+                <p className="mt-2 text-center text-sm text-[#6B7280] leading-6">
+                    We sent a 6-digit verification code to
+                </p>
+
+                {email && (
+                    <p className="mt-1 text-center text-sm font-semibold text-[#111827] break-all">
+                        {email}
+                    </p>
+                )}
+
+                {/* Form */}
+                <form
+                    onSubmit={handleSubmit}
+                    className="mt-8"
+                >
+
+                    {/* OTP */}
+                    <div>
+                        <label className="block mb-2 text-sm font-semibold text-[#374151]">
+                            Verification Code
+                        </label>
+
+                        <div className="relative">
+                            <ShieldCheck
+                                size={19}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF]"
+                            />
+
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                autoComplete="one-time-code"
+                                maxLength={6}
+                                value={otp}
+                                onChange={handleChange}
+                                placeholder="Enter 6-digit OTP"
+                                className="w-full h-12 pl-11 pr-4 rounded-[12px] border border-[#E5E7EB] bg-[#F9FAFB] text-[#111827] tracking-[0.35em] font-semibold outline-none focus:border-[#111827] transition"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Verify Button */}
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full h-12 mt-5 rounded-[12px] bg-[#111827] text-white flex items-center justify-center gap-2 text-sm font-bold hover:bg-gray-800 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        {loading ? (
+                            <>
+                                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                Verifying...
+                            </>
+                        ) : (
+                            <>
+                                Verify Account
+                                <ShieldCheck size={17} />
+                            </>
+                        )}
+                    </button>
+
+                </form>
+
+                {/* Back */}
+                <div className="mt-7 text-center">
+                    <Link
+                        to="/auth/register"
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-[#374151] hover:text-[#111827] transition"
+                    >
+                        <ArrowLeft size={16} />
+                        Back to Register
+                    </Link>
+                </div>
+
+            </div>
+        </div>
+    )
+}
+
+export default VerifyOtp
